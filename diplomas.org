@@ -1,0 +1,18 @@
+* Bachelor thesis 
+** Structure (15-25 pages)
+*** Title page (1 page)
+*** Table of contents (1 page)
+*** Introduction (2-5 pages)
+**** Structure
+***** Introduction to the area of study
+***** Unvailing the problem to be solved by the work
+*** Goal and tasks (1 page)
+*** Related work (introduction to context, 4-10 pages)
+*** Technical meat (4-10 pages)
+**** If necessary, might be split into a few sections
+***** i.e., a separate section per task
+*** Conclusion and future work (1 page)
+**** Mirror of the "Goal and tasks" section
+**** Concluding reasoning of the work
+**** Future work explanation
+*** References (links to related work, pages aren't counted)
