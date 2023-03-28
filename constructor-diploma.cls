@@ -73,7 +73,7 @@
 %% Гиперссылки
 \usepackage{xcolor}
 \definecolor{BlueLUH}{cmyk}{1.0,0.7,0,0}
-\usepackage[colorlinks=true,urlcolor=black,linkcolor=black,filecolor=black,citecolor=BlueLUH]{hyperref}
+\usepackage[colorlinks=true,urlcolor=BlueLUH,linkcolor=black,filecolor=black,citecolor=BlueLUH]{hyperref}
 
 %% Включение графических файлов
 \usepackage{graphicx}

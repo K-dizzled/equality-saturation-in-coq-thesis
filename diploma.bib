@@ -1,10 +1,3 @@
-@article{test,
-    author={Günter Frö},
-    title = {Wörter},
-    journal = {Wörter in Österreich},
-    year = {2013}
-}
-
 @article{batty_2016,
 	url = {https://doi.org/10.1145%2F2837614.2837637},
 	year = 2016,
@@ -58,6 +51,20 @@
   publisher={Springer Science \& Business Media} 
 }
 
+@article{hahn_lib,
+    title={Hahn: a Coq library that contains a useful collection of lemmas and tactics about lists and binary relations}, 
+    author={Viktor Vafeiadis et al.},
+    year={2018},
+    url={https://github.com/vafeiadis/hahn},
+}
+
+@article{ocaml_rust_ffi,
+    title={ocaml-rs: OCaml extensions in Rust},
+    author={Zach Shipko et al.},
+    year={2021},
+    url={https://crates.io/crates/ocaml},
+}
+
 @article{PichonPharabod_Sewell16,
 author = {Pichon-Pharabod, Jean and Sewell, Peter},
 title = {A Concurrency Semantics for Relaxed Atomics That Permits Optimisation and Avoids Thin-Air Executions},
@@ -77,4 +84,40 @@ numpages = {12},
 keywords = {Relaxed memory models, C/C++, Concurrency}
 }
 
+@article{egg,
+author = {Willsey, Max and Nandi, Chandrakana and Wang, Yisu Remy and Flatt, Oliver and Tatlock, Zachary and Panchekha, Pavel},
+title = {Egg: Fast and Extensible Equality Saturation},
+year = {2021},
+issue_date = {January 2021},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {5},
+number = {POPL},
+url = {https://doi.org/10.1145/3434304},
+doi = {10.1145/3434304},
+abstract = {An e-graph efficiently represents a congruence relation over many expressions. Although they were originally developed in the late 1970s for use in automated theorem provers, a more recent technique known as equality saturation repurposes e-graphs to implement state-of-the-art, rewrite-driven compiler optimizations and program synthesizers. However, e-graphs remain unspecialized for this newer use case. Equality saturation workloads exhibit distinct characteristics and often require ad-hoc e-graph extensions to incorporate transformations beyond purely syntactic rewrites. This work contributes two techniques that make e-graphs fast and extensible, specializing them to equality saturation. A new amortized invariant restoration technique called rebuilding takes advantage of equality saturation's distinct workload, providing asymptotic speedups over current techniques in practice. A general mechanism called e-class analyses integrates domain-specific analyses into the e-graph, reducing the need for ad hoc manipulation. We implemented these techniques in a new open-source library called egg. Our case studies on three previously published applications of equality saturation highlight how egg's performance and flexibility enable state-of-the-art results across diverse domains.},
+journal = {Proc. ACM Program. Lang.},
+month = {jan},
+articleno = {23},
+numpages = {29},
+keywords = {e-graphs, equality saturation}
+}
 
+@article{ruler,
+author = {Nandi, Chandrakana and Willsey, Max and Zhu, Amy and Wang, Yisu Remy and Saiki, Brett and Anderson, Adam and Schulz, Adriana and Grossman, Dan and Tatlock, Zachary},
+title = {Rewrite Rule Inference Using Equality Saturation},
+year = {2021},
+issue_date = {October 2021},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {5},
+number = {OOPSLA},
+url = {https://doi.org/10.1145/3485496},
+doi = {10.1145/3485496},
+abstract = {Many compilers, synthesizers, and theorem provers rely on rewrite rules to simplify expressions or prove equivalences. Developing rewrite rules can be difficult: rules may be subtly incorrect, profitable rules are easy to miss, and rulesets must be rechecked or extended whenever semantics are tweaked. Large rulesets can also be challenging to apply: redundant rules slow down rule-based search and frustrate debugging. This paper explores how equality saturation, a promising technique that uses e-graphs to apply rewrite rules, can also be used to infer rewrite rules. E-graphs can compactly represent the exponentially large sets of enumerated terms and potential rewrite rules. We show that equality saturation efficiently shrinks both sets, leading to faster synthesis of smaller, more general rulesets. We prototyped these strategies in a tool dubbed Ruler. Compared to a similar tool built on CVC4, Ruler synthesizes 5.8\texttimes{} smaller rulesets 25\texttimes{} faster without compromising on proving power. In an end-to-end case study, we show Ruler-synthesized rules which perform as well as those crafted by domain experts, and addressed a longstanding issue in a popular open source tool.},
+journal = {Proc. ACM Program. Lang.},
+month = {oct},
+articleno = {119},
+numpages = {28},
+keywords = {Program Synthesis, Rewrite Rules, Equality Saturation}
+}
