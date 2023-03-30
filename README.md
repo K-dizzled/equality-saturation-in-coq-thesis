@@ -2,7 +2,7 @@
 
 ## Bachelor of Science, Computer Science
 ## Constructor University Bremen
-## Andrei Kozyrev
+### Andrei Kozyrev
 
 Scientific supervisor: Professor **Anton Podkopaev**
 
