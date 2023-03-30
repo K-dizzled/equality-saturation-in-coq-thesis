@@ -1,0 +1,85 @@
+\section{Related Work}
+
+\subsection{Coq}
+This section aims to provide an overview of Coq and its significance in the field of theorem proving. We will outline the advantages of using Coq compared to other proof assistants and methods. Additionally, we will delve deeper into the Coq proving process.
+
+\subsubsection{Coq Overview}
+% TODO: Попробовал добавить footnote на терминал, выглядит как степень...
+Coq is a formal proof management system. It provides a language called Gallina, which is used to define mathematical objects and write formal proofs. The formalism behind Coq is the Calculus of Inductive Constructions (CIC)~\cite{paulinmohring:hal-01094195}. In CIC types are used to ensure the correctness of proofs. Each theorem is essentially a type, and its proof is a value inhabiting that type. It might also be useful to think of proofs as functions from hypothesis to conclusion. For example, assume we have a context $\Gamma$, a proposition $\varphi$ and we want to prove $\Gamma \vdash \varphi$. That would mean that the proof we are looking for is a mapping, which for any argument of type $\Gamma$ constructs a value of type $\varphi$. 
+
+\subsubsection{Coq Proof mode}
+As mentioned earlier, proofs can be viewed as functions and this is one of the ways to make a proof in Coq. We will provide an example for a better understanding. Consider the following theorem: given value of type $A$ and a function $f : A \to B$, we can construct a value of type $B$. 
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    Definition test (A B : Prop) :
+      A -> (A -> B) -> B.
+\end{lstlisting}
+
+To prove such theorem we need to apply the value $a$ of type $A$ to the function $f$ and conclude the proof:
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    Definition test (A B : Prop) :
+      A -> (A -> B) -> B
+    := fun (a : A) (f : A -> B) => f a.
+\end{lstlisting}
+
+Constracting proof terms by hand may be useful to learn Coq, but it is very inconvenient to write bigger proofs in such manner. In a bigger proof, as like as in paper proofs, you want to iteratively modify the environment and step by step achieve the goal. Coq enters proof mode when you begin a proof, such as with the \texttt{Theorem} command: 
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    Theorem test (A B : Prop) :
+      A -> (A -> B) -> B.
+    Proof.
+\end{lstlisting}
+
+When you enter a proof mode, you are able to always see current unfinished goals and an up-to-date hypothesises: 
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    A, B : Prop
+    ============================
+    A -> (A -> B) -> B
+\end{lstlisting}
+
+Now we can proof the theorem using tactics. Tactics implement backwards reasoning, so when tactic is applied, all hypothesises it uses to modify the goal are added to the context. 
+
+Firstly, we call an \texttt{intros} tactic, which introduces all propositions on the left side of the implication as assumptions: 
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    A, B : Prop
+    H : A
+    H0 : A -> B
+    ============================
+    B
+\end{lstlisting}
+
+We have a hypothesis $H$ of type $A$, but we need $B$. We call an \texttt{apply H0} tactic, which proves us $B$, but adds $A$ as a new goal. Now if we call \texttt{apply H}, we will conclude the proof. 
+
+\vspace{0.5cm}
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+Lemma test' (A B : Prop) :
+  A -> (A -> B) -> B.
+Proof.
+  intros.
+  apply H0.
+  apply H.
+Qed.
+\end{lstlisting}
+
+\subsubsection{Coq's Significance}
+There are other Proof Assistants continuing to appear, but Coq has been developed and improved since 1989. The heart of a proof assistant is its kernel, which is the primary source of reliability of the tool. Unfortunately, regarding of the kernel's size, as any other software, it has issues. However, the amount of work done by the Coq community to recheck and validate the kernel, makes Coq the most trustworthy proof assistant available.
+
+% TODO: Возможно лучше заменить на Odd Order Theorem
+Moreover, Coq's huge strength is the amount of impressive results, obtained using it. The most famous result, achieved using Coq, is the Four Color Theorem proof. The Four Color Theorem states that any map can be colored using only four colors, so that no two adjacent regions are colored the same. There were several paper proofs, that were all proven to be incorrect after a while. A computer-assisted proof was proposed by Kenneth Appel and Wolfgang Haken in 1976~\cite{appel_4color1976}. The proof reduced the problem to the analysis of a smaller number of options and their enumeration by a computer for many hours. Consequently, the mathematical community was not inclined to trust the proof. The first formal checked proof was proposed by George Gonthier et al.\ in 2005~\cite{Gonthier2008FormalPF}, which showed the community that Coq is ready for huge and complex proofs. 
+
+\subsubsection{Proof Automation}
+This thesis focuses on automating the proofs, whilst a question may arise whether such approach makes proofs less clear to read. There are several proof styles in Coq. A framework called \texttt{SSReflect}\footnote{\href{https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html}{https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html}} exists. Conceptually, \texttt{SSReflect} differs from ordinary \texttt{Tactics}\footnote{\href{https://coq.inria.fr/refman/proof-engine/tactics.html\#tactics}{https://coq.inria.fr/refman/proof-engine/tactics.html\#tactics}} in that proofs are written with almost no automation, and the tactics language is much more expressive. Even though \texttt{SSReflect} has less automation, proofs anyway tend to be confusing. From the other hand, when classical Coq \texttt{Tactics} are used, proof is usually broken down into a huge number of lemmas and sub-claims, definitions of which make the idea clear. Lemmas that are deep down inside the proof can typically be automated without sacrificing the readability, because their proofs are self-evident. 
+
+\subsection{Solutions}
+In 2023 Kokologiannakis et al.\ presented the tool called \texttt{Kater}~\cite{kater}. \texttt{Kater} is a sound and automated way to answer memory-model questions. \texttt{Kater} is a useful, but standalone tool. Firstly, that means we must believe in its correctness, whereas any functionality integrated into Coq is protected by the Coq's typechecker from producing incorrect results. Secondly, proofs in weak memory are ofter more diverse than just reasoning about relational expressions. For instance, we may want to prove correctness of the compilation scheme, e.g.\ from C to Assembly language. In such cases, the semantics of the assembly code must be related to the original operational semantics of the instructions in our language. While relations are still relevant, they are only a small part of the problem. The main focus is on proving properties about the compilation process. Therefore, \texttt{Kater} is suitable only for a limited set of problems, where relations are the primary concern, and the proof process does not involve other complex components. In contrast, Coq provides a comprehensive framework for formal reasoning that allows us to tackle a wide range of problems. 
+
+\subsection{Equality Saturation}

@@ -58,8 +58,16 @@
 % Более интересный шрифт: 
 % \setmonofont[Mapping=tex-text]{EB Garamond}
 
+% Иногда footnote начинает прилепляться к низу текста,
+% это решает проблему и всегда прижимает его к низу страницы 
+\usepackage[bottom]{footmisc}
+
 % Просто для шаблона
 \usepackage{lipsum}
+
+% Для листингов кода
+\usepackage{listings}
+\usepackage{lstcoq}
 
 % Для вертикального отступа между абзацами
 \usepackage[skip=10pt, indent=0pt]{parskip}

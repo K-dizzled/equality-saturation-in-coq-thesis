@@ -1,0 +1,32 @@
+% Style taken from https://github.com/tlringer/thesis/blob/44611c63bef5a7f89e3693687b24f0140650c03d/UWThesis-master/maintenance/analytics.tex
+% -------------------------------------------------------------------------------------------------------------------------------------------
+
+\lstdefinelanguage{coq}{
+    keywords={Theorem, Proof, Record, Lemma, Definition, Abort, Qed, forall, Inductive, fun, Require, Import, Fixpoint, match, end, with, Qed, Defined,
+Parameter, Axiom},
+    basicstyle=\linespread{0.95}\small\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\itshape\rmfamily,
+    showstringspaces=false,
+    columns=flexible,
+    breaklines=true,
+    texcl=true,
+    mathescape=true,
+    tabsize=4,
+    stringstyle=\color{brown},
+    escapeinside={(@}{@)},
+}
+
+\lstdefinelanguage{ocaml}{
+    keywords={let, rec, val, if, else, match, with, then, in},
+    basicstyle=\linespread{0.95}\small\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\itshape\rmfamily,
+    showstringspaces=false,
+    columns=flexible,
+    breaklines=true,
+    texcl=true,
+    mathescape=true,
+    tabsize=2,
+    stringstyle=\color{brown},
+}
