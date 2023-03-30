@@ -1,104 +1,17 @@
-## LaTeX Thisis template
+# Bachelor's Thesis: Equality saturation for solving equalities of relational expressions
 
-This is a diploma thesis template for students studying at the faculty of Computer Science, Constructor University. The template is based on the SPbSU math-mech thesis [template](https://www.papeeria.com/p/73174b63d0ffee4d37da4abda3647095?withLastOpenedFile=false). 
+## Bachelor of Science, Computer Science
+## Constructor University Bremen
+## Andrei Kozyrev
 
-## To run in vscode with LaTeX workshop plugin:
-Download the [multi-command](https://marketplace.visualstudio.com/items?itemName=ryuta46.multi-command) plugin. 
+Scientific supervisor: Professor **Anton Podkopaev**
 
-Update `settings.json` file, by adding this property: 
-```json
-"latex-workshop.latex.build.forceRecipeUsage": false,
-"latex-workshop.latex.recipes":[
-        {
-            "name": "latexmk",
-            "tools": [
-                "latexmk"
-            ]
-        },
-        {
-            "name": "latexmk (latexmkrc)",
-            "tools": [
-                "latexmk_rconly"
-            ]
-        },
-        {
-            "name": "latexmk (lualatex)",
-            "tools": [
-                "lualatexmk"
-            ]
-        },
-        {
-            "name": "latexmk (xelatex)",
-            "tools": [
-                "xelatexmk"
-            ]
-        },
-        {
-            "name": "pdflatex -> bibtex -> pdflatex * 2",
-            "tools": [
-                "pdflatex",
-                "bibtex",
-                "pdflatex",
-                "pdflatex"
-            ]
-        },
-        {
-            "name": "Compile Rnw files",
-            "tools": [
-                "rnw2tex",
-                "latexmk"
-            ]
-        },
-        {
-            "name": "Compile Jnw files",
-            "tools": [
-                "jnw2tex",
-                "latexmk"
-            ]
-        },
-        {
-            "name": "Compile Pnw files",
-            "tools": [
-                "pnw2tex",
-                "latexmk"
-            ]
-        },
-        {
-            "name": "tectonic",
-            "tools": [
-                "tectonic"
-            ]
-        },
-        {
-            "name": "lualatex -> bibtex -> lualatex * 2",
-            "tools": [
-                "lualatexmk",
-                "bibtex",
-                "lualatexmk",
-                "lualatexmk"
-            ]
-        },
-    ]
-```
-And `keybindings.json` file by adding this property:
-```json
-{
-    {
-        "key": "cmd+e",
-        "when": "resourceExtname == .tex",
-        "command": "extension.multiCommand.execute",
-        "args": {
-            "sequence": [
-                {
-                    "command": "latex-workshop.recipes", 
-                    "args": "lualatex -> bibtex -> lualatex * 2"
-                }, 
-                {
-                    "command": "latex-workshop.refresh-viewer"
-                }
-            ]
-        }
-    },
-}
-```
-After that, you can use `cmd+e` to build and refresh the pdf viewer.
+Bremen, 2023
+
+## Abstract
+
+Modern CPUs are being developed exceptionally fast, and the number of cores is increasing rapidly. This has led to the development of multithreading, which is a technique that allows for the execution of multiple threads on a single CPU.\@ Memory models are a fundamental aspect of multithreading and describe how memory is ordered at runtime in relation to source code. Currently, existing memory models are unsatisfactory and there is a need for new models that can be rigorously proven. In order to achieve this, formal verification using the Coq proof assistant is utilized, which enables automated proof checking and ensures the accuracy of results. Specialists in weak memory are continuosly improving the results in this domain.
+
+One of the big and common problems in weak memory is the proof of equivalence of several memory models. Memory models are represented as expressions over relational language. 
+
+This thesis focuses on the automation of proving equalities over relational expressions in Coq.\@ We are utilizing the techniques of equality saturation and E-graph data structure to generate proof of equaivalence for a given pair of terms. By automating these proofs, we can greatly increase the efficiency and accuracy of the proof process in weak memory.
