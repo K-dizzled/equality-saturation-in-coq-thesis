@@ -41,6 +41,16 @@
 \ProcessOptions\relax
 \LoadClass[a4paper,\my@fontsize]{\my@baseclass}
 
+% Цитаты
+\def\signed #1{{\leavevmode\unskip\nobreak\hfil\penalty50\hskip2em
+  \hbox{}\nobreak\hfil(#1)%
+  \parfillskip=0pt \finalhyphendemerits=0 \endgraf}}
+
+\newsavebox\mybox
+\newenvironment{aquote}[1]
+  {\savebox\mybox{#1}\begin{quote}}
+  {\signed{\usebox\mybox}\end{quote}}
+
 % Поля настраиваются командами \newgeometry во время и после генерации титульных 
 % страниц и 
 \usepackage[a4paper]{geometry}
@@ -68,6 +78,7 @@
 % Для листингов кода
 \usepackage{listings}
 \usepackage{lstcoq}
+\usepackage{lstrust}
 
 % Для вертикального отступа между абзацами
 \usepackage[skip=10pt, indent=0pt]{parskip}
@@ -78,6 +89,20 @@
 %% Отступ в первом абзаце
 \usepackage{indentfirst}
 
+% Для математики всей подряд
+\usepackage{amsmath}
+\newtheorem{definition}{Definition}[section]
+
+% База
+\usepackage{tikz}
+
+% Для круговых маркеров
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+
+% Для подписей к figures 
+\usepackage{caption}
+
 %% Гиперссылки
 \usepackage{xcolor}
 \definecolor{BlueLUH}{cmyk}{1.0,0.7,0,0}
@@ -85,6 +110,9 @@
 
 %% Включение графических файлов
 \usepackage{graphicx}
+
+% For subfigures in figures
+\usepackage{subfig}
 
 %% we don't need to load graphicx since it will be loaded by xunicode (which is loaded by fontspec) 
 \usepackage[titletoc]{appendix}

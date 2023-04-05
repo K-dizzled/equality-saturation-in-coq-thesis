@@ -1,8 +1,7 @@
 \section{Objectives}
 This thesis aims to automate solving equaivalences over relational expressions in Coq. The goal is to manage to use the \texttt{egg} library and automate the proof process. The main objectives are:
 \begin{itemize}
-    \item Develop a framework for communication between Rust and the \texttt{Coq} interactive proofs. We need to connect two completely stadalone systems, Coq and \texttt{egg}, together to enable their communication and data interchange.
-    % TODO: Add reference to the chapter. 
-    \item Make a rule-parameterized algorithm on top of the \texttt{egg} library for producing a series of rewrites, which prove relational equivalence. Given two expressions and a rewriting system, there may be multipl eapproaches to prove the equivalence. The naive approach to build an e-graph for one expression and search for another may have problems unrevealed in Chapter {?}. 
+    \item Develop a framework for communication between Rust and \texttt{Coq} interactive proofs.
+    \item Make a rule-parameterized algorithm on top of the \texttt{egg} library for producing a series of rewrites, which prove relational equivalence. Given two expressions and a rewriting system, there may be multiple approaches to prove the equivalence. 
     \item Experiment on existing proofs and used lemmas to come up with a usable and efficient rule set. Firstly, to analyse existing weak memory proofs and provide users a useful interface. Secondly, as big rule sets result in huge e-graphs, that take long to be built, we aim to research on the efficient and substantive rule set, that would be small enough to be used to build e-graphs in practice.
 \end{itemize}

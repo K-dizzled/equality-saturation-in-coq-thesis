@@ -1,6 +1,7 @@
 \section{Related Work}
+First part of this chapter focuses on introducing the reader to Coq proof assistant, its core concepts and significance. Then other solutions to the problem are discussed in Section~\ref{othersoulutions}. Finally, we focus on the details of our particular approach and cover details regarding equality saturation and the \texttt{egg} library in Section~\ref{egraphs}.
 
-\subsection{Coq}
+\subsection{Coq}\label{relatedworkcoq}
 This section aims to provide an overview of Coq and its significance in the field of theorem proving. We will outline the advantages of using Coq compared to other proof assistants and methods. Additionally, we will delve deeper into the Coq proving process.
 
 \subsubsection{Coq Overview}
@@ -59,7 +60,6 @@ Firstly, we call an \texttt{intros} tactic, which introduces all propositions on
 We have a hypothesis $H$ of type $A$, but we need $B$. We call an \texttt{apply H0} tactic, which proves us $B$, but adds $A$ as a new goal. Now if we call \texttt{apply H}, we will conclude the proof. 
 
 \vspace{0.5cm}
-\vspace{0.5cm}
 \begin{lstlisting}[language=coq]
 Lemma test' (A B : Prop) :
   A -> (A -> B) -> B.
@@ -79,7 +79,64 @@ Moreover, Coq's huge strength is the amount of impressive results, obtained usin
 \subsubsection{Proof Automation}
 This thesis focuses on automating the proofs, whilst a question may arise whether such approach makes proofs less clear to read. There are several proof styles in Coq. A framework called \texttt{SSReflect}\footnote{\href{https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html}{https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html}} exists. Conceptually, \texttt{SSReflect} differs from ordinary \texttt{Tactics}\footnote{\href{https://coq.inria.fr/refman/proof-engine/tactics.html\#tactics}{https://coq.inria.fr/refman/proof-engine/tactics.html\#tactics}} in that proofs are written with almost no automation, and the tactics language is much more expressive. Even though \texttt{SSReflect} has less automation, proofs anyway tend to be confusing. From the other hand, when classical Coq \texttt{Tactics} are used, proof is usually broken down into a huge number of lemmas and sub-claims, definitions of which make the idea clear. Lemmas that are deep down inside the proof can typically be automated without sacrificing the readability, because their proofs are self-evident. 
 
-\subsection{Solutions}
-In 2023 Kokologiannakis et al.\ presented the tool called \texttt{Kater}~\cite{kater}. \texttt{Kater} is a sound and automated way to answer memory-model questions. \texttt{Kater} is a useful, but standalone tool. Firstly, that means we must believe in its correctness, whereas any functionality integrated into Coq is protected by the Coq's typechecker from producing incorrect results. Secondly, proofs in weak memory are ofter more diverse than just reasoning about relational expressions. For instance, we may want to prove correctness of the compilation scheme, e.g.\ from C to Assembly language. In such cases, the semantics of the assembly code must be related to the original operational semantics of the instructions in our language. While relations are still relevant, they are only a small part of the problem. The main focus is on proving properties about the compilation process. Therefore, \texttt{Kater} is suitable only for a limited set of problems, where relations are the primary concern, and the proof process does not involve other complex components. In contrast, Coq provides a comprehensive framework for formal reasoning that allows us to tackle a wide range of problems. 
+\subsection{Alternative solutions to solving relational equations}\label{othersoulutions}
+In 2023 Kokologiannakis et al.\ presented the tool called \texttt{Kater}~\cite{kater}. \texttt{Kater} is a tool that allows to automatically answer memory-model questions. \texttt{Kater} is a useful, but standalone tool. Firstly, that means we must believe in its correctness, whereas any functionality integrated into Coq is protected by the Coq's typechecker from producing incorrect results. Secondly, proofs in weak memory are ofter more diverse than just reasoning about relational expressions. For instance, we may want to prove correctness of the compilation scheme, e.g.\ from C to Assembly language. In such cases, the semantics of the assembly code must be related to the original operational semantics of the instructions in our language. While relations are still relevant, they are only a small part of the problem. The main focus is on proving properties about the compilation process. Therefore, \texttt{Kater} is suitable only for a limited set of problems, where relations are the primary concern, and the proof process does not involve other complex components. In contrast, Coq provides a comprehensive framework for formal reasoning that allows us to tackle a wide range of problems. 
 
-\subsection{Equality Saturation}
+\subsection{E-graphs and Equality Saturation}\label{egraphs}
+E-graphs are a generalization of a set-union data structure~\cite{tarjan_1975}. \\ E-graphs were first introduced by Greg Nelson and Derek C. Oppen in 1980~\cite{nelson_1980}. Since then, e-graphs have been used for a successful mechanical theorem proving and program verification, e.g.\ in Stanford Pascal Verifier at 1979~\cite{pascal_verifier_manual_1979}. 
+
+We will now formally define an e-graph. Let $\Sigma$ be a set of function symbols. Let $\Sigma_n$ be a subset of $\Sigma$ consisting of symbols of arity $n$. Let $\operatorname{Id}$ be a set of unique idetnifiers $\operatorname{id}_1, \operatorname{id}_2, \dots, \operatorname{id}_k$, called the e-class \textbf{Id}s. Then \textbf{e-node} is a function symbol $f \in \Sigma$ and a list of $n$ e-class Ids. E-node is denoted $f(\operatorname{id}_1, \operatorname{id}_2, \dots, \operatorname{id}_n)$. E-class is a set of e-nodes. E-graph is a Disjoint Set Union data structure over e-class Ids. Here we give an example of a how a simple e-graph is build. Consider such a simple language: 
+\begin{center}
+ \begin{lstlisting}[language=rust, style=colouredRust]
+  enum SimpleLanguage {
+      Num(i32),
+      "+" = Add([Id; 2]),
+      "*" = Mul([Id; 2]),
+      "/" = Div([Id; 2]),
+      "<<" = Bitwise([Id; 2]),
+      Symbol(Symbol),
+  }
+  \end{lstlisting}
+\end{center}
+It is denoted as if we were to use it in \texttt{egg} library. Elements of the enum are function symbols with a name and a given arity. Notation explained: 
+\definecolor{rust_red}{rgb}{0.75, 0.0, 0.0}
+\definecolor{rust_blue}{rgb}{0.0, 0.0, 0.75}
+\begin{center}
+  \texttt{$\underbrace{\text{\textcolor{rust_blue}{''+''}}}_{\circled{1}}$ = $\underbrace{\text{\textcolor{rust_red}{Add}}}_{\circled{2}}$($\underbrace{\text{[Id; 2]}}_{\circled{3}}$)}
+\end{center}
+\begin{enumerate}
+  \item[$\circled{1}$] --- A string literal to automatically generate a parser for the language
+  \item[$\circled{2}$] --- A unique identifier of a function symbol
+  \item[$\circled{3}$] --- Arity of the function symbol
+\end{enumerate}
+Let us now consider the following arithmetic expression: \texttt{(a $\times$ 2) / 2}. The resulting e-graph is shown in Figure~\ref{fig:egraph1}. E-classes are shown in dashed boxes and e-nodes are circles with their function symbols. Edges represent the parent-child relationship between e-nodes. In Figure~\ref{fig:egraph1}, no rewrite rules were yet added, so each e-node is in its own e-class. 
+\begin{figure}[!htb]
+  \minipage{0.2\textwidth}
+    \includegraphics[width=\linewidth, height=4.6cm]{img/egraph1.pdf}
+    \caption{}\label{fig:egraph1}
+  \endminipage\hfill
+  \minipage{0.24\textwidth}
+    \includegraphics[width=\linewidth, height=4.6cm]{img/egraph2.pdf}
+    \caption{}\label{fig:egraph2}
+  \endminipage\hfill
+  \minipage{0.24\textwidth}%
+    \includegraphics[width=\linewidth, height=4.6cm]{img/egraph3.pdf}
+    \caption{}\label{fig:egraph3}
+  \endminipage\hfill
+  \minipage{0.26\textwidth}
+    \includegraphics[width=\linewidth, height=4.6cm]{img/egraph4.pdf}
+    \caption{}\label{fig:egraph4}
+  \endminipage
+\end{figure}
+
+When the e-graph is built we can run an equality sturation algorithm. Consider a rewriting system $S$, containing rules of form \texttt{lhs} $\longrightarrow$ \texttt{rhs}, where \texttt{lhs} and \texttt{rhs} are expression in our language. On a high level algorithm does the following: 
+\begin{enumerate}
+  \item Iterate over rules $r \in S$. For each rule $r$:
+  \begin{enumerate}
+    \item Try to match the pattern from $r$'s \texttt{lhs} with e-nodes present in the graph. 
+    \item If a match was found: if \texttt{rhs} was not present in the graph, add it. Then merge \texttt{lhs} and \texttt{rhs} e-classes.
+  \end{enumerate}  
+  \item Loop step 1 until each new iteration introduces new equivalences into the graph. After the process is finished, graph is called saturated.
+\end{enumerate}
+
+Figures 1--4 illustrate how the algorithm proceeds. In Figure~\ref{fig:egraph2} the rule \texttt{x $\times$ 2 $\longrightarrow$ x $\ll$ 1} was applied. In Figure~\ref{fig:egraph3} the rule \texttt{(x $\times$ y)/z $\longrightarrow$ x $\times$ (y/z)} was applied. In Figure~\ref{fig:egraph4} rules \texttt{x/x $\longrightarrow$ 1} and \texttt{1 $\times$ x $\longrightarrow$ x} were applied.

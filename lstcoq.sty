@@ -18,7 +18,22 @@ Parameter, Axiom},
 }
 
 \lstdefinelanguage{ocaml}{
-    keywords={let, rec, val, if, else, match, with, then, in},
+    keywords={let, rec, val, if, else, match, with, then, in, type},
+    basicstyle=\linespread{0.95}\small\ttfamily,
+    keywordstyle=\color{blue},
+    commentstyle=\itshape\rmfamily\color{gray},
+    morecomment=[s]{(*}{*)}, 
+    showstringspaces=false,
+    columns=flexible,
+    breaklines=true,
+    texcl=true,
+    mathescape=true,
+    tabsize=2,
+    stringstyle=\color{brown},
+}
+
+\lstdefinelanguage{ocaml_vernac}{
+    keywords={VERNAC, COMMAND, END, TACTIC, EXTEND, CLASSIFIED},
     basicstyle=\linespread{0.95}\small\ttfamily,
     keywordstyle=\color{blue},
     commentstyle=\itshape\rmfamily,
