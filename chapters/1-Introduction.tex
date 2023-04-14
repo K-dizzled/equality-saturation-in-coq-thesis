@@ -1,10 +1,11 @@
-\section{Introduction}
+\section*{Introduction}
+\setcounter{section}{1}
 
-Memory model is an abstraction, invented to describe the behavior of a program in a multithreaded environment. Memory models are used to study the behavior of concurrent executions on various computing systems. Memory models consist of a set of rules, which dictate how memory operations interact with each other. 
+\emph{Memory model} is an abstraction, invented to describe the behavior of a program in a multithreaded environment. A memory model describes the behavior of a concurrent program on a particular system. A memory model dictates how memory operations interact with each other. 
 
-One of the ways to define a memory model is to use declarative semantics, where memory model could be represented as a graph, where nodes represent memory operations and edges represent order on these operations. Given a concrete execution of a program on a given architecture, we can construct a graph from a Happens Before Relation over pairs of Memory Operations. This graph would represent the execution of the program.  
+A well-established approach to define a memory model is to use declarative semantics, where a program execution is depicted as a graph, where nodes represent memory operations and edges denote the order on these operations. Some examples of binary relations between instructions are \emph{Program Order}, which sequantially binds events in one thread, and \emph{reads-from}, which relates writes to reads, reading from them. 
 
-The most traditional and conservative memory model is Sequential Consistency. Sequential Consistency states that all memory operations happening in a single thread are related by the Program Order. 
+The most traditional and conservative memory model is \emph{Sequential Consistency} (SC)~\cite{lamport_tc79}. A nice way to think about SC is as a switch. At each time step, the switch selects a thread to run, and runs its next event completely.
 \begin{aquote}{Leslie Lamport (1979)}
     \textit{``The result of any execution is the same as if the
     operations of all the processors were executed in
@@ -13,11 +14,11 @@ The most traditional and conservative memory model is Sequential Consistency. Se
     program.''}
 \end{aquote}
 
-Memory models that are more relaxed than Sequential Consistency are called weak memory models. While Weak Memory models give compilers and processors more flexibility to optimize, they introduce more problems to the programmer. 
+However, SC fails to describe the real-world concurrent systems due to compiler and CPU optimizations. We can only run a single instruction at a time, so we lose the benefit of running a program on multiple threads. Due to that, models that are more complex, but yield better performance, are developed and used in practice. Memory models that are more relaxed than Sequential Consistency are called \emph{weak memory models}. While weak memory models give compilers and processors more flexibility to optimize, they introduce more problems to the programmer. 
 
 % TODO: Хочется аксиоматическое определение SC и пример доказательства простого факта о SС с использованием отношений
 
-If we reason about weak memory models in a declarative way, we use relations to describe models and facts about them. Proofs of various model properties also require using relational expressions. Proofs of such propositions are typically massive and very error prone. There were several cases of incorrect result in submited and published papers. Batty et al.~\cite{batty_2016}\ suggested an incorrect fix for the semantics of SC calls in C++, which was later documented by Lahav et al.~\cite{lahav2017repairing}. Moreover Pichon-Pharabod et al.\  in 2016 suggested an incorrect proof of compilation in their paper~\cite{PichonPharabod_Sewell16}. 
+If we reason about weak memory models in a declarative way, we use relations to describe models and facts about them. As memory models are stated with relational expressions, proofs of various model properties are also done reasoning in relational language. Proofs of such propositions are typically massive and very error prone. There were several cases of incorrect result in submited and published papers. Batty et al.~\cite{batty_2016}\ suggested an incorrect fix for the semantics of SC calls in C++, which was later documented by Lahav et al.~\cite{lahav2017repairing}. Moreover Pichon-Pharabod et al.\  in 2016 suggested an incorrect proof of compilation in their paper~\cite{PichonPharabod_Sewell16}. 
 
 Given that writing and maintaining proofs about Weak Memory on paper is very difficult, it is considered good practice to write them in Coq~\cite{bertot2013interactive}, which is a proof assistant system. Coq helps to grant the correctness of the proof process. In Coq, proofs are expressed as formal mathematical objects, and the correctness of the proof is ensured by checking that the proof is consistent with the axioms and rules of logic. Coq is a tool that facilitates the creation of mechanically-verifiable proofs, in contrast to paper-based proofs which are prone to errors.
 
@@ -44,22 +45,22 @@ Equality saturation is a process of iteratively applying a set of rewrite rules 
 In a saturated e-graph it becomes algorithmically easy to check if two terms are equivalent and, moreover, to find a proof of their equivalence. Having a sequence of rewrites, we can apply them within the Coq proof view. Just as we would do by hand, applying the theorems one by one.
 
 % TODO: Заменить на Contributions? 
-\subsection{Core implementation components}
+% \subsection{Core implementation components}
 
-We have chosen fast and lightweight \texttt{egg}~\cite{egg} rust library as an equality saturation engine for our project. \texttt{Egg} is a new and ambitious project, that has already proven its worth and was used in tools like \textit{Ruler}~\cite{ruler}. 
+% We have chosen fast and lightweight \texttt{egg}~\cite{egg} rust library as an equality saturation engine for our project. \texttt{Egg} is a new and ambitious project, that has already proven its worth and was used in tools like \textit{Ruler}~\cite{ruler}. 
 
-In Coq you can add new functionality by writing a plugin. Plugins are written in OCaml language. We have set the communication between OCaml and Rust using the \texttt{OCaml-rs}~\cite{OCaml_rust_ffi} foreign function interface (FFI).\@ To prove theorems in Coq, you use proof mode, which is activated when you start a proof, for example, by using the \texttt{Theorem} command. The proof state contains one or more unproven goals. Each goal consists of a conclusion, which is the statement to be proven, and a local context. When the proof is complete, you exit proof mode by using the \texttt{Qed} command. During proof mode, you use so called \textit{tactics}, to gradually transform the proof. Tactics specify how to transform the proof state of an incomplete proof and are used to eventually generate a complete proof.
+% In Coq you can add new functionality by writing a plugin. Plugins are written in OCaml language. We have set the communication between OCaml and Rust using the \texttt{OCaml-rs}~\cite{OCaml_rust_ffi} foreign function interface (FFI).\@ To prove theorems in Coq, you use proof mode, which is activated when you start a proof, for example, by using the \texttt{Theorem} command. The proof state contains one or more unproven goals. Each goal consists of a conclusion, which is the statement to be proven, and a local context. When the proof is complete, you exit proof mode by using the \texttt{Qed} command. During proof mode, you use so called \textit{tactics}, to gradually transform the proof. Tactics specify how to transform the proof state of an incomplete proof and are used to eventually generate a complete proof.
 
-Commands in Coq are similar to tactics, but accessible from outside of proof mode, e.g.\ command \texttt{Print}, which prints the given term to console. A Coq plugin typically consists of a set of commands and tactics, that are used from Coq as a front-end to the plugin. 
-We have defined multiple tools inside our plugin, that are used to interact with the \texttt{egg} library: 
-\begin{itemize}
-    \item \texttt{Cegg solve} --- a tactic that simplifies the lhs of the equation. It takes the conclusion of the goal, retrieves the lhs of the equivalence, parses it into an s-expression\footnote{S-expressions represent tree-like data} and passes it to \texttt{egg}. \texttt{Egg} builds an e-graph $E$ for it and extracts the ``best'' term $t$ from $E$. A sequence of rewrites to achieve $t$ is passed back to OCaml and is applied to the lhs of the equivalence inside Coq proof mode. 
-    \item \texttt{Cegg solve eq} --- a tactic that tries to prove the equivalence between the lhs and rhs of the equation, using \texttt{egg}. 
-    \item \texttt{Cegg config} --- a command, that allows to configure the ruleset for \texttt{egg}. It takes a user-defined list of rewrite rules and caches it for the later use in \texttt{Cegg solve} and \texttt{Cegg solve eq}.
-\end{itemize}
-The source code and documentation for the thesis is available at:
-\begin{center}
-    \href{https://github.com/K-dizzled/relations-via-egg}{\texttt{https://github.com/K-dizzled/relations-via-egg}}
-\end{center}
+% Commands in Coq are similar to tactics, but accessible from outside of proof mode, e.g.\ command \texttt{Print}, which prints the given term to console. A Coq plugin typically consists of a set of commands and tactics, that are used from Coq as a front-end to the plugin. 
+% We have defined multiple tools inside our plugin, that are used to interact with the \texttt{egg} library: 
+% \begin{itemize}
+%     \item \texttt{Cegg solve} --- a tactic that simplifies the lhs of the equation. It takes the conclusion of the goal, retrieves the lhs of the equivalence, parses it into an s-expression\footnote{S-expressions represent tree-like data} and passes it to \texttt{egg}. \texttt{Egg} builds an e-graph $E$ for it and extracts the ``best'' term $t$ from $E$. A sequence of rewrites to achieve $t$ is passed back to OCaml and is applied to the lhs of the equivalence inside Coq proof mode. 
+%     \item \texttt{Cegg solve eq} --- a tactic that tries to prove the equivalence between the lhs and rhs of the equation, using \texttt{egg}. 
+%     \item \texttt{Cegg config} --- a command, that allows to configure the ruleset for \texttt{egg}. It takes a user-defined list of rewrite rules and caches it for the later use in \texttt{Cegg solve} and \texttt{Cegg solve eq}.
+% \end{itemize}
+% The source code and documentation for the thesis is available at:
+% \begin{center}
+%     \href{https://github.com/K-dizzled/relations-via-egg}{\texttt{https://github.com/K-dizzled/relations-via-egg}}
+% \end{center}
 
 % TODO: Добавить Outline? 

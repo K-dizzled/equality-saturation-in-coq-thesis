@@ -1,20 +1,20 @@
 \section{Implementation}
 Let us summarize the technical problem and the main components of the developed system. Given a proposition about relations in Coq, we want to prove it using equality saturation, performed by the \texttt{egg} library in Rust. 
 
-A Coq plugin is a tool with external functionality, added to Coq. There are two main approaches of writing Coq plugins: 
+A Coq plugin is a tool with external functionality, added to Coq. There are two main approaches to writing Coq plugins: 
 \begin{itemize}
     \item \texttt{Ltac}\footnote{\href{https://coq.inria.fr/refman/proof-engine/ltac.html\#ltac}{https://coq.inria.fr/refman/proof-engine/ltac.html\#ltac}} and \texttt{Ltac2}\footnote{\href{https://coq.inria.fr/refman/proof-engine/ltac2.html\#ltac2}{https://coq.inria.fr/refman/proof-engine/ltac2.html\#ltac2}} are languages that help to write simple plugins, combining basic combinations of tactics and actions into a single tactic. It is useful, but not powerful enough to write complex plugins.
     \item The most traditional way of building new complex tactics is to write a Coq plugin in OCaml.
 \end{itemize}
 
-Coq's compiler is written in OCaml, so plugins written in OCaml allow to extend Coq's grammar, along with adding complex logic to the tactic, e.g.\ using FFI to call external libraries. To have a better understanding of how all all the components interact with each other in our work, we provide a diagram in Figure~\ref{fig:components}.
+Coq's compiler is written in OCaml, so plugins written in OCaml allow to extend Coq's grammar, along with adding complex logic to the tactic, e.g.\ using FFI to call external libraries. That is exactly what we need. To have a better understanding of how all the components interact with each other in our work, we provide a diagram in Figure~\ref{fig:components}.
 
 \begin{figure}[htbp]
     \begin{tikzpicture}[ampersand replacement=\&, scale=1.5]
         \node[rectangle, rounded corners, draw, fill=orange!20, minimum height=1cm] at (0,0) (CP) {\textsc{COQ Proofview}};
         \node[rectangle, rounded corners, draw, fill=blue!20, minimum height=1cm] at (4,0) (OP) {\textsc{OCaml Plugin}};	
         \node[rectangle, rounded corners, draw, fill=green!20, minimum height=1cm] at (8,0) (RUST) {\textsc{Rust}};	
-        \node[rectangle, rounded corners, draw, fill=magenta!20, minimum height=1cm] at (8,-3.5) (EGG) {\textsc{EGG}};	
+        \node[rectangle, rounded corners, draw, fill=cyan!20, minimum height=1cm] at (8,-3.5) (EGG) {\textsc{EGG}};	
         \node[rectangle, rounded corners, draw, fill=red!20, minimum height=1cm] at (4,-3.5) (EP) {\textsc{Expl Parser}};	
 
         \draw [-latex] (CP) to node [above, sloped] (TextNode1) {\texttt{EC}} (OP);
@@ -30,7 +30,7 @@ Coq's compiler is written in OCaml, so plugins written in OCaml allow to extend 
 
 Data types over each arrow from Figure~\ref{fig:components} will be discussed in detail in the following chapter.  
 
-\subsection{Vernacular Commands}
+\subsection{Vernacular Commands}\label{sec:vernacular_commands}
 To extend Coq's grammar with a new tactic or command, one should write a \texttt{.mlg} file, where the tactic's syntax is defined. Consider an example: 
 
 \vspace{0.5cm}
@@ -102,7 +102,7 @@ Our next task is to prepare the conclusion for the \texttt{egg} use. \texttt{Eco
         | Ind of Names.inductive * 'univs (* Inductive constructors, e.g. True or False *)
 \end{lstlisting}
 
-\texttt{Econstr.t} is parsed into a smaller type, which will be then transferred to \texttt{egg}. If unexpected constructors occur in the expression, exception is raised and a error is shown to the user. Data type is an s-expression over strings, with an addition of lambdas: 
+The conclusion of the goal is splitted by the equivalence sign into the \texttt{lhs} and the \texttt{rhs} of the equation. Both sides are individual \texttt{Econstr.t}'s that will be passed to Rust as two terms separately. \texttt{Econstr.t} is parsed into a smaller type. If unexpected constructors occur in the expression, exception is raised and a error is shown to the user. Data type is an s-expression over strings, with an addition of lambdas: 
 
 \vspace{0.5cm}
 \begin{lstlisting}[language=ocaml]
@@ -124,6 +124,122 @@ Next step is to pass an object of type \texttt{goal\_s\_expr} to Rust for furthe
 \end{lstlisting}
 
 \subsection{Using Egg}
+Now we want to define an e-graph, which \texttt{egg} will operate with. EGraphs are parameterized over the Language given by the user. We define a language in the same notation as introduced in Section~\ref{egraphs}. We denote the following language, which represents operations on relations: 
 
+\vspace{0.5cm}
+\begin{lstlisting}[language=rust, style=colouredRust]
+    define_language! {
+        pub enum RelLanguage {
+            "top" = Top, // Full relation
+            "bot" = Bot, // Empty relation
+            "complete_set" = CompleteSet, // Full set
+            ";;" = Seq([Id; 2]), // Relational composition
+            "+" = CT(Id), // Transitive closure 
+            "?" = RT(Id), // Reflexive closure
+            "*" = CRT(Id), // Transitive-reflexive closure
+            "eqv_rel" = Eqv(Id), // Equivalence relation 
+            "clos_sym" = CS(Id), // Symmetric closure
+            "-1" = Transpose(Id), // Relational transposition 
+            "clos_refl_sym" = CRS(Id), // Symmetric-reflexive closure
+            "||" = Union([Id; 2]), // Union of relations 
+            "&&" = Inter([Id; 2]), // Intersection of relations
+            "setminus" = SetMinus([Id; 2]), // Set difference
+            Symbol(Symbol), // Concrete relations
+        }
+    }
+\end{lstlisting}
 
+Rust component recieves two terms (\texttt{lhs} and \texttt{rhs} of the goal conclusion) as input and translates both of them into \texttt{RelLanguage}. Then \texttt{egg} builds an e-graph for the \texttt{lhs}. After that, we aim to saturate the e-graph with equivalences, so that it will represent a set of relations, equivalent to the \texttt{lhs}. Equality saturation algorithm is parameterized with a set of rules. We take useful theorems about relations from the Hahn library and define a rewriting system in \texttt{egg}'s notation:
 
+\vspace{0.5cm}
+\begin{lstlisting}[language=rust, style=colouredRust]
+    vec![
+        rewrite!("ct_rt"; "(;; (+ ?r) (* ?r))" <=> "(+ ?r)"),
+        rewrite!("rt_ct"; "(;; (* ?r) (+ ?r))" <=> "(+ ?r)"),
+        rewrite!("cr_seq"; "(;; (? ?r) ?r')" <=> "(|| ?r' (;; ?r ?r'))"),
+        // ...
+    ]
+\end{lstlisting}
+
+A rewriting system consits of named rules with patterns to search for in the e-graph and terms to replace them with. \texttt{?r} denotes an arbitrary term named \texttt{r} and the \texttt{<=>} sign is a syntactic sugar for a pair of rules: \texttt{a <=> b} is equivalent to \texttt{a => b} and \texttt{b => a}. Currently, we have chosen 51 rules for the system. When the set of rewrites is provided we run equality saturation algorithm. It iteratively searches for a \texttt{lhs} pattern to apply and expands the e-graph. More on equality saturation in \texttt{egg} could be found in the paper~\cite{egg} and a pseudocode is given in \texttt{egg}'s tutorial~\footnote{\href{https://docs.rs/egg/latest/egg/tutorials/\_01\_background/index.html}{https://docs.rs/egg/latest/egg/tutorials/\_01\_background/index.html}}. Having a saturated graph, to check two terms for equivalence we can call a built-in function \texttt{egraph.equivs(expr1, expr2)}. 
+
+\subsection{Naive implementation complexity}
+If we follow the naive algorithm strategy to build an e-graph, we can bump into a problem. Unfortunately, choice of the rules has a massive impact on performance. Even though e-graph as a data structure was designed to store potentially infinite number of terms, some rule combinations can lead to uncontrolled growth. Consider an example: 
+ 
+\vspace{0.5cm}
+\begin{lstlisting}[language=rust, style=colouredRust, label=lst:just_rtb]
+    vec![
+        rewrite!("rt_begin"; "(;; (? ?r) (* ?r))" <=> "(* ?r)"),
+    ]
+\end{lstlisting}
+
+If we have a rewrite system with just one rule: Listing~\ref{lst:just_rtb}, and we build an e-graph for expression \texttt{r* {;;} r?}, we get a tiny e-graph with 5 nodes, e-graph is shown in Figure~\ref{fig:just_rtb}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.25\textwidth]{img/rules_important_egraph1.pdf}
+    \caption{Saturated e-graph for \texttt{r* {;;} r?} with just one rule}\label{fig:just_rtb}
+\end{figure}
+
+However, if we add another rule to the system, the saturation algorithm will not terminate, if we do not set the node/iteration limit. We add an assosiativity rule for the \texttt{;;} operator, for simplicity it will be unidirectional:
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=rust, style=colouredRust, label=lst:just_rtb]
+    vec![
+        rewrite!("rt_begin"; "(;; (? ?r) (* ?r))" <=> "(* ?r)"),
+        rewrite!("seqA"; "(;; ?a (;; ?b ?c))" => "(;; (;; ?a ?b) ?c)"),
+    ]
+\end{lstlisting}
+
+With assosiativity, e-graph explodes with new e-classes, that cannot be defined recursively anymore. For example, we get the following set of equivalences: 
+\begin{align*}
+    \texttt{r*} &\boldsymbol{\equiv} \highlight{blue!30}{\texttt{(r? ;; (r? ;; r?))}} \texttt{;; r*} \\ 
+       &\boldsymbol{\equiv} \highlight{blue!30}{\texttt{r?}} \texttt{;; r*} \\ 
+       &\boldsymbol{\equiv} \highlight{blue!30}{\texttt{(r? ;; r?)}} \texttt{;; r*} \\ 
+       &\boldsymbol{\equiv} \highlight{blue!30}{\texttt{((r? ;; r?) ;; (r? ;; r?))}} \texttt{;; r*} \\ 
+\end{align*}
+
+The highlighted subterms in the left parts of the expressions are not equivalent to each other, but they appear in the e-graph during the saturation. 
+
+All in all, the problem is as follows. Expanding rules in tandem with rules that reorder nodes, as commutativty or associativity, can lead to an infinite growth of the e-graph. There are several ways to solve this problem. We have came up with various approaches and will discuss them in detail in Section~\ref{sec:proof_strategies}. Some of the strategies are implemented in our plugin and are available for the user.
+
+\subsubsection{Proof Strategies}\label{sec:proof_strategies}
+A less general, but more efficient solution may be to manually schedule, how much particular rules should be applied. If we are trying to prove that \texttt{a} $\boldsymbol{\equiv}$ \texttt{b} and to do so we build an e-graph for \texttt{a} and search for \texttt{b} in it, we can use ``expanding'' rules only for terms that are smaller then \texttt{b}. However, in this thesis, we will focus on more general, but more heuristic approaches. We are still working on providing the user with various trade-offs between efficiency and completeness, all of which can be easily toggled within the plugin. 
+
+All solutions assume that we completely opt out bidirectional rules and orient all of them in the direction of the smaller term. It shrinks the range of problems we can solve, but significantly reduces the time complexity of the algorithm. To prove \texttt{a} $\boldsymbol{\equiv}$ \texttt{b}, we can build an e-graph for \texttt{a} and search for \texttt{b} in it and vice versa. Alternatively, we can build both e-graphs and check their intersection to be non-empty. If we find an element that is equivalent to both \texttt{a} and \texttt{b}, we can conclude that \texttt{a} $\boldsymbol{\equiv}$ \texttt{b} and construct a proof.
+
+\subsection{Retrieving proofs in Coq}
+After we finish saturating the e-graph and find out whether two expressions are equivalent in it, we can use \texttt{egg}'s \texttt{explain\_equivalence(expr1, expr2)} function to get the proof. The output will be a series of s-expressions annotated with the rewrite being performed. Consider an example, showing how \texttt{(/ (* (/ 2 3) (/ 3 2)) 1)} (or $(\frac{2}{3} \cdot \frac{3}{2}) / 1$) can be simplified to \texttt{1}:
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=rust, style=colouredRust]
+    (/ (* (/ 2 3) (/ 3 2)) 1)
+    (Rewrite<= div-one (* (/ 2 3) (/ 3 2)))
+    (* (Rewrite=> unsafe-invert-division (/ 1 (/ 3 2))) (/ 3 2))
+    (Rewrite=> cancel-denominator 1)
+\end{lstlisting}
+
+This sequence of s-expressions is parsed to a list of tuples with names of theorems to apply and directions (\texttt{forward} or \texttt{backward}) in which to apply them. This data is returned as to OCaml, OCaml consequently applies \texttt{rewrite} tactic with a given theorems inside the goal, and concludes the proof using \texttt{reflexivity} tactic. This is how we automate the proof of equivalence of two expressions in our plugin.
+
+\subsection{Plugin configuration}
+By that moment we have described the ideas and the most important parts behind the algorithm that checks two terms for equivalence using \texttt{egg}. Along with that, the plugin supports the functionality to provide \texttt{egg} with user pre-defined rewriting rules, in compliment to the ones we have defined ourselves. For that, the vernacular command (more on vernacular commands in Section~\ref{sec:vernacular_commands}) \texttt{cegg\_config} is provided. The set of theorems with which we configured the egg consists of statements about abstract relationships. In addition to them, in order to prove more substantial facts, it is necessary to use axioms of specific relationships with a stable meaning. Such axioms are usually combined into a set called \emph{well-formed} (WF). Consider the following example.
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    Variable rf : A -> A -> Prop.
+    Variable mo : A -> A -> Prop.
+    Notation "'fr'" := ( rf(@${}^{-1}$@) ;; mo).
+
+    Record Wf :=
+    { 
+        rf_mo : rf ;; mo (@$\equiv$@) (@$\varnothing$@) ;
+        rf_rf : rf ;; rf (@$\equiv$@) (@$\varnothing$@) ;
+        mo_rft : mo ;; rf(@${}^{-1}$@) (@$\equiv$@) (@$\varnothing$@) ;
+        mo_fr : mo ;; fr (@$\equiv$@) (@$\varnothing$@) ; 
+        fr_fr : fr ;; fr (@$\equiv$@) (@$\varnothing$@) ;
+    }.
+
+    Cegg config Wf.
+\end{lstlisting}
+
+The object with axioms is created, then passed to OCaml plugin, WF is checked to contain only relational equivalences, then it is tramsferred to Rust, where it is cached in build folder. Afterwards, these axioms would be used along with pre-defined ones to prove theorems.

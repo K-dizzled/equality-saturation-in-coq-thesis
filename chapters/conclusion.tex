@@ -1,2 +1,17 @@
-\section*{Conclusion}
-\lipsum[1]
+\section{Conclusion and future work}
+
+We have implemented a Coq plugin, which uses fast and lightweight \texttt{egg} Rust library, to automatically prove relational equivalences in Coq. We have developed a framework for communication between Coq and Rust and made a rule-parameterized algorithm on top of the \texttt{egg} library for producing a series of rewrites that is used in Coq interactive proofs. Moreover, we have experimented on various proving strategies and rewriting systems to implement an efficient and useful tool. 
+
+We have defined multiple tools inside our plugin, that are used to interact with the \texttt{egg} library: 
+\begin{itemize}
+    \item \texttt{Cegg solve} --- a tactic that simplifies the lhs of the equation. It takes the conclusion of the goal, retrieves the lhs of the equivalence, parses it into an s-expression and passes it to \texttt{egg}. \texttt{Egg} builds an e-graph $E$ for it and extracts the ``best'' term $t$ from $E$. A sequence of rewrites to achieve $t$ is passed back to OCaml and is applied to the lhs of the equivalence inside Coq proof mode. 
+    \item \texttt{Cegg solve eq} --- a tactic that tries to prove the equivalence between the lhs and rhs of the equation, using \texttt{egg}. 
+    \item \texttt{Cegg config} --- a command, that allows to configure the ruleset for \texttt{egg}. It takes a user-defined list of rewrite rules and caches it for the later use in \texttt{Cegg solve} and \texttt{Cegg solve eq}.
+\end{itemize}
+
+As part of our future work, we plan to generalize our solution and extend its applicability to solve similar problems encountered by the \texttt{autorewrite} tactic in Coq. It takes a library of theorems as input and automatically tries to use it in order to prove the goal. Equality saturation has potential benefits and can outperform the existing approaches.  
+
+The source code and documentation for the thesis is available at:
+\begin{center}
+    \href{https://github.com/K-dizzled/relations-via-egg}{\texttt{https://github.com/K-dizzled/relations-via-egg}}
+\end{center}

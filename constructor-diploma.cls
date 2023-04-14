@@ -80,6 +80,10 @@
 \usepackage{lstcoq}
 \usepackage{lstrust}
 
+% Для цветного выделения текста 
+\newcommand{\highlight}[2]{%
+  \colorbox{#1}{$\displaystyle#2$}}
+
 % Для вертикального отступа между абзацами
 \usepackage[skip=10pt, indent=0pt]{parskip}
 
@@ -91,6 +95,7 @@
 
 % Для математики всей подряд
 \usepackage{amsmath}
+\usepackage{amssymb}
 \newtheorem{definition}{Definition}[section]
 
 % База
