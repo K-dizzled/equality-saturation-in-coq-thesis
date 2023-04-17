@@ -28,7 +28,7 @@ Coq's compiler is written in OCaml, so plugins written in OCaml allow to extend 
     \caption{Components of the system}\label{fig:components}
 \end{figure}
 
-Data types over each arrow from Figure~\ref{fig:components} will be discussed in detail in the following chapter.  
+A term with a proposition to prove is extracted from Coq Proofview using Coq-Api. Expression is parsed into a smaller custom type and  transferred to Rust. Rust makes data ready to be used by egg and runs equality saturation algorithm. After that, the proof is constructed and returned to OCaml, conveniently packed. Finally, OCaml performs changes in Coq Proofview. 
 
 \subsection{Vernacular Commands}\label{sec:vernacular_commands}
 To extend Coq's grammar with a new tactic or command, one should write a \texttt{.mlg} file, where the tactic's syntax is defined. Consider an example: 
@@ -130,21 +130,21 @@ Now we want to define an e-graph, which \texttt{egg} will operate with. EGraphs 
 \begin{lstlisting}[language=rust, style=colouredRust]
     define_language! {
         pub enum RelLanguage {
-            "top" = Top, // Full relation
-            "bot" = Bot, // Empty relation
+            "top" = Top,                  // Full relation
+            "bot" = Bot,                  // Empty relation
             "complete_set" = CompleteSet, // Full set
-            ";;" = Seq([Id; 2]), // Relational composition
-            "+" = CT(Id), // Transitive closure 
-            "?" = RT(Id), // Reflexive closure
-            "*" = CRT(Id), // Transitive-reflexive closure
-            "eqv_rel" = Eqv(Id), // Equivalence relation 
-            "clos_sym" = CS(Id), // Symmetric closure
-            "-1" = Transpose(Id), // Relational transposition 
-            "clos_refl_sym" = CRS(Id), // Symmetric-reflexive closure
-            "||" = Union([Id; 2]), // Union of relations 
-            "&&" = Inter([Id; 2]), // Intersection of relations
-            "setminus" = SetMinus([Id; 2]), // Set difference
-            Symbol(Symbol), // Concrete relations
+            ";;" = Seq([Id; 2]),          // Relational composition
+            "+" = CT(Id),                 // Transitive closure 
+            "?" = RT(Id),                 // Reflexive closure
+            "*" = CRT(Id),                // Transitive-reflexive closure
+            "eqv_rel" = Eqv(Id),          // Equivalence relation 
+            "clos_sym" = CS(Id),          // Symmetric closure
+            "-1" = Transpose(Id),         // Relational transposition 
+            "clos_refl_sym" = CRS(Id),    // Symmetric-reflexive closure
+            "||" = Union([Id; 2]),        // Union of relations 
+            "&&" = Inter([Id; 2]),        // Intersection of relations
+            "sminus" = SetMinus([Id; 2]), // Set difference
+            Symbol(Symbol),               // Concrete relations
         }
     }
 \end{lstlisting}
@@ -225,7 +225,7 @@ This sequence of s-expressions is parsed to a list of tuples with names of theor
 By that moment we have described the ideas and the most important parts behind the algorithm that checks two terms for equivalence using \texttt{egg}. Along with that, the plugin supports the functionality to provide \texttt{egg} with user pre-defined rewriting rules, in compliment to the ones we have defined ourselves. For that, the vernacular command (more on vernacular commands in Section~\ref{sec:vernacular_commands}) \texttt{cegg\_config} is provided. The set of theorems with which we configured the egg consists of statements about abstract relationships. In addition to them, in order to prove more substantial facts, it is necessary to use axioms of specific relationships with a stable meaning. Such axioms are usually combined into a set called \emph{well-formed} (WF). Consider the following example.
 
 \vspace{0.5cm}
-\begin{lstlisting}[language=coq]
+\begin{lstlisting}[language=coq, label=lst:wf_example, caption={Well-formed example},captionpos=b]
     Variable rf : A -> A -> Prop.
     Variable mo : A -> A -> Prop.
     Notation "'fr'" := ( rf(@${}^{-1}$@) ;; mo).
@@ -243,3 +243,58 @@ By that moment we have described the ideas and the most important parts behind t
 \end{lstlisting}
 
 The object with axioms is created, then passed to OCaml plugin, WF is checked to contain only relational equivalences, then it is tramsferred to Rust, where it is cached in build folder. Afterwards, these axioms would be used along with pre-defined ones to prove theorems.
+
+\subsection{Evaluation}
+Unfortunately, we cannot demonstrate usability of the created tool to prove any popular substantive results. An example of such a result could be proving the equivalence of two definitions of the \texttt{eco} relation. Consider a slightly modified Listing~\ref{lst:wf_example}.
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq, label=lst:eco_example, caption={Eco equivalent definitions}, captionpos=b]
+    Variable rf : A -> A -> Prop.
+    Variable mo : A -> A -> Prop.
+    Notation "'fr'" := ( rf(@${}^{-1}$@) ;; mo).
+
+    Notation "'eco1'" := (rf (@$\cup$@) mo (@$\cup$@) fr)^+.
+    Notation "'eco2'" := (rf (@$\cup$@) (mo ;; rf^?) (@$\cup$@) (fr ;; rf^?)).
+
+    Record Wf :=
+    { 
+        mo_trans : mo ;; mo (@$\subseteq$@) mo ; 
+        rf_mo : rf ;; mo (@$\equiv$@) (@$\varnothing$@) ;
+        rf_rf : rf ;; rf (@$\equiv$@) (@$\varnothing$@) ;
+        mo_rft : mo ;; rf(@${}^{-1}$@) (@$\equiv$@) (@$\varnothing$@) ;
+        mo_fr : mo ;; fr (@$\equiv$@) (@$\varnothing$@) ; 
+        fr_fr : fr ;; fr (@$\equiv$@) (@$\varnothing$@) ;
+    }.
+
+    Implicit Type WF : Wf.
+
+    Lemma eco_eq WF : 
+        eco1 (@$\equiv$@) eco2.
+    Proof.
+\end{lstlisting}
+
+Despite the fact that we need to prove the equivalence of two relations, one of the properties we need to use along the way is \texttt{mo\_trans}, which was added to the WF in Listing~\ref{lst:eco_example}. In the process of proof, we inevitably need to use inclusions of one relation into another, which unfortunately our plugin cannot do automatically. Based on our work, we have reached the conclusion that for verified automated proofs of equivalences, we frequently require to operate with inclusions of relations, which our approach is not capable of. In order to adapt the equality saturation approach to our task, we need to improve the e-graphs so that they can store asymmetric rewrites.
+
+Nevertheless, the created solution can solve simple subtasks and simplify work in a limited set of cases, when all intermediate steps involve only equivalence rewrites, for example, consider taking Listing~\ref{lst:wf_example} and trying to prove the following Lemma: 
+
+\vspace{0.5cm}
+\begin{lstlisting}[language=coq]
+    Lemma eco_sub WF (r : relation A) :
+        (fr (@$\cup$@) mo) ;; (fr (@$\cup$@) mo) (@$\equiv$@) fr ;; mo (@$\cup$@) mo ;; mo.
+    Proof.
+        rewrite -> seq_union_r.
+        rewrite -> seq_union_l.
+        rewrite -> fr_fr.
+        rewrite -> mo_fr.
+        rewrite -> union_false_l.
+        rewrite -> union_false_l.
+        rewrite -> seq_union_l.
+        all: auto.
+    Qed.
+
+    Lemma eco_sub' WF (r : relation A) :
+        (fr (@$\cup$@) mo) ;; (fr (@$\cup$@) mo) (@$\equiv$@) fr ;; mo (@$\cup$@) mo ;; mo.
+    Proof. Cegg solve eq. Qed. 
+\end{lstlisting}
+
+It takes 7 rewrite calls to prove this lemma by hand, but it takes only about 4 seconds for our tool to solve it automatically. Here we have used the proof strategy where all rules are bidirectional. Strategies without expanding rules (described in Section~\ref{sec:proof_strategies}) are usually executed in less then 800ms. 
